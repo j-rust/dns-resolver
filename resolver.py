@@ -6,15 +6,48 @@ import dns.name
 class Resolver():
 
     def __init__(self):
-        self.cach = None
+        self.referral_cache = {}
+        self.answer_cache = {}
+        # cache initialization is hardcoded currently, may want to make it dynamic
+        self.answer_cache['.'] = {}
+        self.answer_cache['.']['NS'] = ['a.root-servers.net.', 'b.root-servers.net.', 'c.root-servers.net.']
+
+        self.referral_cache['a.root-servers.net.'] = {}
+        self.referral_cache['a.root-servers.net.']['A'] = ['198.41.0.4']
+        self.referral_cache['b.root-servers.net.'] = {}
+        self.referral_cache['b.root-servers.net.']['A'] = ['192.228.79.201']
+        self.referral_cache['c.root-servers.net.'] = {}
+        self.referral_cache['c.root-servers.net.']['A'] = ['192.33.4.12']
+
+    def execute_query(self, q, record, server):
+        query = dns.message.make_query(q, record)
+        return dns.query.udp(query, server)
 
     def resolve(self, cmd):
         print 'Received resolve command with args: ' + cmd
         return 0
 
+    def print_referral_cache(self):
+        for domain in self.referral_cache:
+                print domain + " :"
+                for key in self.referral_cache[domain]:
+                    list = ', '.join(self.referral_cache[domain][key])
+                    print key + " : [" + list + "]"
+                print ""
+
+    def print_answer_cache(self):
+        for domain in self.answer_cache:
+                print domain + ":"
+                for key in self.answer_cache[domain]:
+                    list = ', '.join(self.answer_cache[domain][key])
+                    print key + ": [" + list + "]"
+                print ""
+
     def print_cache(self):
-        print 'No cache to print'
-        return 0
+        print 'Cache Contents:'
+        print ''
+        self.print_referral_cache()
+        self.print_answer_cache()
 
     def process_command(self, cmd):
         cmd_tokens = cmd.split(" ")
