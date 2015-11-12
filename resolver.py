@@ -10,12 +10,11 @@ class Resolver():
         self.referral_cache = {}
         self.answer_cache = {}
         # cache initialization is hardcoded currently, may want to make it dynamic
-        self.answer_cache['.'] = {}
-        self.answer_cache['.']['NS'] = ['a.root-servers.net.', 'b.root-servers.net.', 'c.root-servers.net.']
+        self.referral_cache['.'] = {}
+        self.referral_cache['.']['NS'] = ['a.root-servers.net.', 'b.root-servers.net.', 'c.root-servers.net.']
 
         self.referral_cache['a.root-servers.net.'] = {}
         self.referral_cache['a.root-servers.net.']['A'] = ['198.41.0.4']
-        self.referral_cache['a.root-servers.net.']['AAAA'] = ['2001:503:ba3e::2:30']
         self.referral_cache['b.root-servers.net.'] = {}
         self.referral_cache['b.root-servers.net.']['A'] = ['192.228.79.201']
         self.referral_cache['c.root-servers.net.'] = {}
@@ -27,8 +26,8 @@ class Resolver():
         query = dns.message.make_query(q, record)
         return dns.query.udp(query, server)
 
-    def resolve(self, cmd):
-        print 'Received resolve command with args: ' + cmd
+    def resolve(self, domain, rrtype):
+        print 'Received resolve command with args: ' + domain + ' ' + rrtype
         return 0
 
     def print_referral_cache(self):
@@ -56,11 +55,10 @@ class Resolver():
     def process_command(self, cmd):
         cmd_tokens = cmd.split(" ")
         if cmd_tokens[0] == 'resolve':
-            self.resolve(cmd)
+            self.resolve(cmd_tokens[1], cmd_tokens[2])
         elif cmd == 'print cache':
             self.print_cache()
         elif cmd == 'quit':
-            print 'Quitting'
             sys.exit(0)
         else:
             print "Unable to recognize command: " + cmd
