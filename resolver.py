@@ -2,6 +2,7 @@ import sys
 import dns.message
 import dns.query
 import dns.name
+import time
 
 class Resolver():
 
@@ -14,10 +15,13 @@ class Resolver():
 
         self.referral_cache['a.root-servers.net.'] = {}
         self.referral_cache['a.root-servers.net.']['A'] = ['198.41.0.4']
+        self.referral_cache['a.root-servers.net.']['AAAA'] = ['2001:503:ba3e::2:30']
         self.referral_cache['b.root-servers.net.'] = {}
         self.referral_cache['b.root-servers.net.']['A'] = ['192.228.79.201']
         self.referral_cache['c.root-servers.net.'] = {}
         self.referral_cache['c.root-servers.net.']['A'] = ['192.33.4.12']
+        self.referral_cache['d.root-servers.net.'] = {}
+        self.referral_cache['d.root-servers.net.']['A'] = ['199.7.91.13']
 
     def execute_query(self, q, record, server):
         query = dns.message.make_query(q, record)
