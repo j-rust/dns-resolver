@@ -111,7 +111,6 @@ class Resolver():
                 else: print 'Unknown rrtype'
 
 
-
             ### Three lines below get the ip address of whatever domain name we pass in.  So does above code but I
             ### am not positive that the indexes will never change
             #addr_info = socket.getaddrinfo(domain, 53, 0, 0, socket.IPPROTO_TCP)
@@ -130,8 +129,7 @@ class Resolver():
         for domain in self.referral_cache:
                 print domain + " :"
                 for key in self.referral_cache[domain]:
-                    list = ', '.join(self.referral_cache[domain][key])
-                    print key + " : [" + list + "]"
+                    print key + ' : ' + self.referral_cache[domain][key].__str__()
                 print ""
 
     def print_answer_cache(self):
