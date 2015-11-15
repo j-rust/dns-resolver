@@ -28,9 +28,34 @@ class Resolver():
         query = dns.message.make_query(q, record)
         return dns.query.udp(query, server)
 
+    def get_ns_records(self, domain):
+        domain += '.'
+        checks = domain.count('.') + 1
+        check_count = 0
+        while check_count < checks:
+            if domain in self.referral_cache:
+                break
+            else:
+                index = domain.find('.') + 1
+                domain = domain[index:]
+                if domain == '':
+                    domain = '.'
+            check_count += 1
+        return self.referral_cache[domain]['NS']
+
     def resolve(self, domain, rrtype):
         print 'Received resolve command with args: ' + domain + ' ' + rrtype
-        name_server = self.referral_cache['a.root-servers.net.']['A'];
+        if domain in self.answer_cache:
+            if rrtype in self.answer_cache[domain]:
+                return self.answer_cache[domain][rrtype]
+        ns_list = self.get_ns_records(domain)
+        if 'A' in self.referral_cache[ns_list[0]]:
+            name_server = self.referral_cache[ns_list[0]]['A']
+        elif 'AAAA' in self.referral_cache[ns_list[0]]:
+            name_server = self.referral_cache[ns_list[0]]['AAAA']
+        else:
+            # default case if no authoritative server is found
+            name_server = self.referral_cache['a.root-servers.net.']['A']
         counter = 0
         current_name_server = None
         while(counter < 100):
