@@ -35,6 +35,7 @@ class Resolver():
         ip_address_server_list = self.referral_cache['a.root-servers.net.'][rrtype]
         ip_address_of_server_to_use = ip_address_server_list[0]
         found_ip = False
+
         while not found_ip:
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
 
@@ -46,7 +47,7 @@ class Resolver():
                     ip_address_of_server_to_use = self.getNextServersIPForAAAATypeRecord(query_result)
 
             else:
-                print 'Found answer'
+                print 'Found answer for ' + domain + ' with rrtype ' + rrtype
                 print self.getFinalIPOfATypeRecord(query_result, rrtype)
                 found_ip = True
 
