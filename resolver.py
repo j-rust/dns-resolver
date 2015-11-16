@@ -23,6 +23,8 @@ class Resolver():
         self.referral_cache['d.root-servers.net.'] = {}
         self.referral_cache['d.root-servers.net.']['A'] = ['199.7.91.13']
 
+        self.referral_cache['a.root-servers.net.']['AAAA'] = ['2001:0503:ba3e:0000:0000:0000:0002:0030']
+
     #  q is the web address, record is the record type (A, AAAA), server is IP address of server to query
     def execute_query(self, q, record, server):
         query = dns.message.make_query(q, record)
@@ -30,76 +32,50 @@ class Resolver():
 
     def resolve(self, domain, rrtype):
         print 'Received resolve command with args: ' + domain + ' ' + rrtype
-        name_server = self.referral_cache['a.root-servers.net.']['A'];
-        counter = 0
-        current_name_server = None
-        while(counter < 100):
-            print 'Name server is:'
-            print name_server[0]
-            query_result = self.execute_query(domain, rrtype, name_server[0])
-            #print 'Authority resultOne'
-            #print query_result.authority
-            #print 'Additional resultOne'
-            #print query_result.additional
-            #print 'Answer resultOne'
-            #print query_result.answer
+        ip_address_server_list = self.referral_cache['a.root-servers.net.'][rrtype]
+        ip_address_of_server_to_use = ip_address_server_list[0]
+        found_ip = False
+        while not found_ip:
+            query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
 
-            authority_result = query_result.authority
-            additional_result = query_result.additional
-            answer_result = query_result.answer
+            if not query_result.answer:
+                print 'Do not have an answer'
+                if rrtype == 'A':
+                    ip_address_of_server_to_use = self.getNextServersIPForATypeRecord(query_result)
+                elif rrtype == 'AAAA':
+                    ip_address_of_server_to_use = self.getNextServersIPForAAAATypeRecord(query_result)
 
-            if not answer_result:
-                print 'Have not found answer yet.'
-                #print 'additional_result[0] is:'
-                #print additional_result[0]
-                current_name_server = str(additional_result[0]).split(" ")
-                #print 'New server name is:'
-                #print current_name_server[0]
-                name_server[0] = current_name_server[4]
-                #print 'IP address of current name server is:'
-                #print current_name_server[4]
             else:
-                print 'Found answer. MX record will take at least one more loop iteration since there is another ' \
-                      'domain lookup'
-                print answer_result
-                final_answer_result = str(answer_result[0]).split(" ")
-                print 'IP of domain is'
-                if(rrtype == 'A' or rrtype == 'AAAA'):
-                    print 'A or AAAA answer is:'
-                    print final_answer_result[4]
-                    break
-                elif(rrtype == 'MX'):
-                    print 'MX answer is:'
-                    print final_answer_result[5]
-                    #print final_answer_result
-                    current_name_server = str(additional_result[0]).split(" ")
-                    #print 'current_name_server:'
-                    name_server[0] = current_name_server[4]
-                    #domain = final_answer_result[5]
-                    rrtype = 'A'
-                elif(rrtype == 'TXT'):
-                    print 'TXT answer is:'
-                    if(final_answer_result[5].startswith('ip4')):
-                        final_answer_tokens = final_answer_result[5].split(":")
-                        print final_answer_tokens[1]
-                        break
-                else: print 'Unknown rrtype'
-
-
-
-            ### Three lines below get the ip address of whatever domain name we pass in.  So does above code but I
-            ### am not positive that the indexes will never change
-            #addr_info = socket.getaddrinfo(domain, 53, 0, 0, socket.IPPROTO_TCP)
-            # IP address of nameserver
-            #addr_info[1][4][0]
-
-            print 'counter is ' + str(counter)
-
-            counter += 1
-
-            print '*************************END OF LOOP ITERATION*************************'
+                print 'Found answer'
+                print self.getFinalIPOfATypeRecord(query_result, rrtype)
+                found_ip = True
 
         return 0
+
+
+    def getNextServersIPForATypeRecord(self, query_result):
+        print 'Attempting to resolve A type domain'
+        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
+        #Take the first server and grab its IP address
+        query_result_tokens = str(query_result.additional[0]).split(" ")
+        return query_result_tokens[4]
+
+    def getNextServersIPForAAAATypeRecord(self, query_result):
+        print 'Attempting to resolve AAAA type domain'
+        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
+        #Take the first server and grab its IP address
+        query_result_tokens = str(query_result.additional[0]).split(" ")
+        return query_result_tokens[4]
+
+    def getFinalIPOfATypeRecord(self, query_result, rrtype):
+        if rrtype == 'A':
+            answer_tokens = str(query_result.answer[0]).split(" ")
+            return answer_tokens[4]
+        elif rrtype == 'AAAA':
+            answer_tokens = str(query_result.answer[0]).split(" ")
+            return answer_tokens[4]
+
+
 
     def print_referral_cache(self):
         for domain in self.referral_cache:
