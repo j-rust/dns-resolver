@@ -48,7 +48,7 @@ class Resolver():
 
     def resolve(self, domain, rrtype):
         print 'Received resolve command with args: ' + domain + ' ' + rrtype
-        ip_address_server_list = self.referral_cache['a.root-servers.net.'][rrtype]
+        ip_address_server_list = self.referral_cache['a.root-servers.net.']['A']
         ip_address_of_server_to_use = ip_address_server_list[0]
         found_ip = False
 
@@ -59,7 +59,7 @@ class Resolver():
         if 'A' in self.referral_cache[ns_list[0]]:
             name_server = self.referral_cache[ns_list[0]]['A']
         elif 'AAAA' in self.referral_cache[ns_list[0]]:
-            name_server = self.referral_cache[ns_list[0]]['AAAA']
+            name_server = self.referral_cache[ns_list[0]]['A']
         else:
             # default case if no authoritative server is found
             name_server = self.referral_cache['a.root-servers.net.']['A']
@@ -74,7 +74,10 @@ class Resolver():
                     ip_address_of_server_to_use = self.getNextServersIPForATypeRecord(query_result)
                 elif rrtype == 'AAAA':
                     ip_address_of_server_to_use = self.getNextServersIPForAAAATypeRecord(query_result)
-
+                elif rrtype == 'MX':
+                    ip_address_of_server_to_use = self.getNextServersIPForMXTypeRecord(query_result)
+                elif rrtype == 'TXT':
+                    ip_address_of_server_to_use = self.getNextServersIPForTXTTypeRecord(query_result)
             else:
                 print 'Found answer for ' + domain + ' with rrtype ' + rrtype
                 print self.getFinalIPOfATypeRecord(query_result, rrtype)
@@ -95,6 +98,19 @@ class Resolver():
         #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
         #Take the first server and grab its IP address
         query_result_tokens = str(query_result.additional[0]).split(" ")
+        print query_result.additional
+        return query_result_tokens[4]
+
+    def getNextServersIPForMXTypeRecord(self, query_result):
+        print 'Attempting to resolve MX type domain'
+        query_result_tokens = str(query_result.additional[0]).split(" ")
+        return query_result_tokens[4]
+
+    def getNextServersIPForTXTTypeRecord(self, query_result):
+        print 'Attempting to resolve TXT type domain'
+        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
+        #Take the first server and grab its IP addresss
+        query_result_tokens = str(query_result.additional[0]).split(" ")
         return query_result_tokens[4]
 
     def getFinalIPOfATypeRecord(self, query_result, rrtype):
@@ -104,6 +120,14 @@ class Resolver():
         elif rrtype == 'AAAA':
             answer_tokens = str(query_result.answer[0]).split(" ")
             return answer_tokens[4]
+        elif rrtype == 'MX':
+            print 'Not yet implemented'
+        elif rrtype == 'TXT':
+            print 'Answer for txt is:'
+            answer_tokens = str(query_result.answer[0]).split(" ")
+            split_answer_tokens = answer_tokens[5].split(":")
+            return split_answer_tokens[1]
+
 
 
 
