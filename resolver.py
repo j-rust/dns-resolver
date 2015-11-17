@@ -140,10 +140,9 @@ class Resolver():
 
     def print_answer_cache(self):
         for domain in self.answer_cache:
-                print domain + ":"
+                print domain + " :"
                 for key in self.answer_cache[domain]:
-                    list = ', '.join(self.answer_cache[domain][key])
-                    print key + ": [" + list + "]"
+                    print key + ' : ' + self.answer_cache[domain][key].__str__()
                 print ""
 
     def print_cache(self):
