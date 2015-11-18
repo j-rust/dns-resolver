@@ -98,7 +98,6 @@ class Resolver():
         #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
         #Take the first server and grab its IP address
         query_result_tokens = str(query_result.additional[0]).split(" ")
-        print query_result.additional
         return query_result_tokens[4]
 
     def getNextServersIPForMXTypeRecord(self, query_result):
