@@ -2,6 +2,7 @@ import sys
 import dns.message
 import dns.query
 import dns.name
+import dns.rdtypes
 import time
 import socket
 
@@ -66,6 +67,15 @@ class Resolver():
                 if rcode == dns.rcode.NXDOMAIN:
                     print 'NXDOMAIN Error: ' + domain + ' does not exist'
                     break
+
+            if query_result.answer:
+                rr = query_result.answer[0][0]
+            else:
+                rr = query_result.authority[0][0]
+            if rr.rdtype == dns.rdatatype.SOA:
+                print query_result.__str__()
+                break
+
             if not query_result.answer:
                 print 'Do not have an answer'
                 if rrtype == 'A':
@@ -136,6 +146,7 @@ class Resolver():
 
 
     def print_referral_cache(self):
+        print 'Referral Cache Contents:\n'
         for domain in self.referral_cache:
                 print domain + " :"
                 for key in self.referral_cache[domain]:
@@ -143,6 +154,8 @@ class Resolver():
                 print ""
 
     def print_answer_cache(self):
+        print 'Answer Cache Contents:\n'
+
         for domain in self.answer_cache:
                 print domain + " :"
                 for key in self.answer_cache[domain]:
