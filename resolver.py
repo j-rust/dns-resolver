@@ -117,7 +117,10 @@ class Resolver():
         print 'Attempting to resolve AAAA type domain'
         #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
         #Take the first server and grab its IP address
-        query_result_tokens = str(query_result.additional[0]).split(" ")
+        for i in range(0, 5):
+            if str(query_result.additional[i] == 'A'):
+                query_result_tokens = str(query_result.additional[i]).split(" ")
+                break
         return query_result_tokens[4]
 
     def getNextServersIPForMXTypeRecord(self, query_result):
