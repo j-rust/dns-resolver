@@ -3,8 +3,13 @@ import dns.message
 import dns.query
 import dns.name
 import dns.rdtypes
+import dns.resolver
+import dns.rdata
 import time
 import socket
+
+from dns import rdatatype
+
 
 class Resolver():
 
@@ -28,7 +33,7 @@ class Resolver():
 
     #  q is the web address, record is the record type (A, AAAA), server is IP address of server to query
     def execute_query(self, q, record, server):
-        query = dns.message.make_query(q, record)
+        query = dns.message.make_query(q, record, want_dnssec=True)
         return dns.query.udp(query, server)
 
     def get_ns_records(self, domain):
@@ -62,6 +67,8 @@ class Resolver():
 
         while not found_ip:
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
+            print 'test'
+            print query_result
             rcode = query_result.rcode()
             if rcode != dns.rcode.NOERROR:
                 if rcode == dns.rcode.NXDOMAIN:
@@ -98,7 +105,7 @@ class Resolver():
                     self.answer_cache[domain] = {}
                 if rrtype not in self.answer_cache[domain]:
                     self.answer_cache[domain][rrtype] = []
-                final_ip = self.getFinalIPOfATypeRecord(query_result, rrtype)
+                final_ip = self.getFinalIPOfRecord(query_result, rrtype)
                 print final_ip
                 self.answer_cache[domain][rrtype].append(final_ip)
                 found_ip = True
@@ -135,7 +142,7 @@ class Resolver():
         query_result_tokens = str(query_result.additional[0]).split(" ")
         return query_result_tokens[4]
 
-    def getFinalIPOfATypeRecord(self, query_result, rrtype):
+    def getFinalIPOfRecord(self, query_result, rrtype):
         if rrtype == 'A':
             answer_tokens = str(query_result.answer[0]).split(" ")
             print answer_tokens[4]
@@ -145,6 +152,7 @@ class Resolver():
             return answer_tokens[4]
         elif rrtype == 'MX':
             print 'Not yet implemented'
+            print query_result
         elif rrtype == 'TXT':
             print 'Answer for txt is:'
             answer_tokens = str(query_result.answer[0]).split(" ")
