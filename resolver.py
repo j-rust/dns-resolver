@@ -111,8 +111,8 @@ class Resolver():
         #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
         #Take the first server and grab its IP address
         for i in range(0, 5):
-            if str(query_result.additional[i] == 'A'):
-                query_result_tokens = str(query_result.additional[i]).split(" ")
+            query_result_tokens = str(query_result.additional[i]).split(" ")
+            if query_result_tokens[3] == 'A':
                 break
         return query_result_tokens[4]
 
@@ -138,7 +138,8 @@ class Resolver():
     def getFinalIPOfATypeRecord(self, query_result, rrtype):
         if rrtype == 'A':
             answer_tokens = str(query_result.answer[0]).split(" ")
-            return answer_tokens[4]
+            print answer_tokens[4]
+            return answer_tokens[4].split()[0]
         elif rrtype == 'AAAA':
             answer_tokens = str(query_result.answer[0]).split(" ")
             return answer_tokens[4]
