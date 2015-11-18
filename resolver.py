@@ -61,7 +61,11 @@ class Resolver():
 
         while not found_ip:
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
-
+            rcode = query_result.rcode()
+            if rcode != dns.rcode.NOERROR:
+                if rcode == dns.rcode.NXDOMAIN:
+                    print 'NXDOMAIN Error: ' + domain + ' does not exist'
+                    break
             if not query_result.answer:
                 print 'Do not have an answer'
                 if rrtype == 'A':
