@@ -67,7 +67,6 @@ class Resolver():
 
         while not found_ip:
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
-            print 'test'
             print query_result
             rcode = query_result.rcode()
             if rcode != dns.rcode.NOERROR:
@@ -105,10 +104,18 @@ class Resolver():
                     self.answer_cache[domain] = {}
                 if rrtype not in self.answer_cache[domain]:
                     self.answer_cache[domain][rrtype] = []
-                final_ip = self.getFinalIPOfRecord(query_result, rrtype)
-                print final_ip
-                self.answer_cache[domain][rrtype].append(final_ip)
-                found_ip = True
+                if self.checkIfAnswerContainsCNAME(query_result) == True:
+                    found_ip == False
+                    final_ip = self.getFinalIPOfRecord(query_result, rrtype)
+                    self.answer_cache[domain][rrtype].append(final_ip)
+                    query_result_tokens = str(query_result.answer[0]).split(" ")
+                    ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
+                    domain = query_result_tokens[4]
+                else:
+                    final_ip = self.getFinalIPOfRecord(query_result, rrtype)
+                    print final_ip
+                    self.answer_cache[domain][rrtype].append(final_ip)
+                    found_ip = True
 
         return 0
 
@@ -145,14 +152,14 @@ class Resolver():
     def getFinalIPOfRecord(self, query_result, rrtype):
         if rrtype == 'A':
             answer_tokens = str(query_result.answer[0]).split(" ")
-            print answer_tokens[4]
+            #if str(query_result.answer[0]).find('CNAME'):print 'Contains cname'
             return answer_tokens[4].split()[0]
         elif rrtype == 'AAAA':
             answer_tokens = str(query_result.answer[0]).split(" ")
             return answer_tokens[4]
         elif rrtype == 'MX':
-            print 'Not yet implemented'
-            print query_result
+            answer_tokens = str(query_result.answer[0]).split(" ")
+            return answer_tokens[5]
         elif rrtype == 'TXT':
             print 'Answer for txt is:'
             answer_tokens = str(query_result.answer[0]).split(" ")
@@ -160,7 +167,16 @@ class Resolver():
             return split_answer_tokens[1]
 
 
-
+    def checkIfAnswerContainsCNAME(self, query_result):
+        print 'Checking for CNAME'
+        print str(query_result.answer[0])
+        if 'CNAME' in str(query_result.answer[0]):
+            print 'Contains CNAME'
+            print query_result.answer[0]
+            return True
+        else:
+            print 'Does not contain CNAME'
+            return False
 
     def print_referral_cache(self):
         print 'Referral Cache Contents:\n'
