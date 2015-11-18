@@ -48,21 +48,15 @@ class Resolver():
 
     def resolve(self, domain, rrtype):
         print 'Received resolve command with args: ' + domain + ' ' + rrtype
-        ip_address_server_list = self.referral_cache['a.root-servers.net.']['A']
-        ip_address_of_server_to_use = ip_address_server_list[0]
+        # ip_address_server_list = self.referral_cache['a.root-servers.net.']['A']
+        # ip_address_of_server_to_use = ip_address_server_list[0]
+        ns_list = self.get_ns_records(domain)
+        ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
         found_ip = False
 
         if domain in self.answer_cache:
             if rrtype in self.answer_cache[domain]:
                 return self.answer_cache[domain][rrtype]
-        ns_list = self.get_ns_records(domain)
-        if 'A' in self.referral_cache[ns_list[0]]:
-            name_server = self.referral_cache[ns_list[0]]['A']
-        elif 'AAAA' in self.referral_cache[ns_list[0]]:
-            name_server = self.referral_cache[ns_list[0]]['A']
-        else:
-            # default case if no authoritative server is found
-            name_server = self.referral_cache['a.root-servers.net.']['A']
 
 
         while not found_ip:
@@ -80,7 +74,13 @@ class Resolver():
                     ip_address_of_server_to_use = self.getNextServersIPForTXTTypeRecord(query_result)
             else:
                 print 'Found answer for ' + domain + ' with rrtype ' + rrtype
-                print self.getFinalIPOfATypeRecord(query_result, rrtype)
+                if domain not in self.answer_cache:
+                    self.answer_cache[domain] = {}
+                if rrtype not in self.answer_cache[domain]:
+                    self.answer_cache[domain][rrtype] = []
+                final_ip = self.getFinalIPOfATypeRecord(query_result, rrtype)
+                print final_ip
+                self.answer_cache[domain][rrtype].append(final_ip)
                 found_ip = True
 
         return 0
