@@ -67,6 +67,12 @@ class Resolver():
                 if rcode == dns.rcode.NXDOMAIN:
                     print 'NXDOMAIN Error: ' + domain + ' does not exist'
                     break
+                if rcode == dns.rcode.REFUSED:
+                    print 'Error, domain could not be resolved: ' + domain
+                    break
+                if rcode == dns.rcode.SERVFAIL:
+                    print 'SERVFAIL Error: ' + domain
+                    break
 
             if query_result.answer:
                 rr = query_result.answer[0][0]
