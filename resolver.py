@@ -40,8 +40,6 @@ class Resolver():
         check_count = 0
         while check_count < checks:
             if domain in self.referral_cache:
-                print 'Found in refferal cache'
-                print self.referral_cache[domain]
                 break
             else:
                 index = domain.find('.') + 1
@@ -53,7 +51,6 @@ class Resolver():
         return self.referral_cache[domain]['NS']
 
     def resolve(self, domain, rrtype):
-        print 'Received resolve command with args: ' + domain + ' ' + rrtype
         ns_list = self.get_ns_records(domain)
         ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
         found_ip = False
@@ -100,7 +97,6 @@ class Resolver():
                 break
 
             if not query_result.answer:
-                print 'Do not have an answer'
                 ref_domain = str(query_result.authority[0]).split(" ")[0]
                 ip_address_of_server_to_use, ref_server = self.getNextServer(query_result)
                 if ref_domain not in self.referral_cache:
@@ -113,23 +109,25 @@ class Resolver():
                 if 'A' not in self.referral_cache[ref_server]:
                     self.referral_cache[ref_server]['A'] = []
                 self.referral_cache[ref_server]['A'].append(ip_address_of_server_to_use)
+                print '_____________________________________________________'
             else:
                 print 'Found answer for ' + domain + ' with rrtype ' + rrtype
                 if self.checkIfAnswerContainsCNAME(query_result) == True:
+                    """
+                        Does the following statement have any purpose?
+                        If not we should delete it
+                    """
                     found_ip == False
                     final_ip = self.getFinalIPOfRecord(query_result, rrtype)
                     cname_info_to_append_to_answer.append(query_result.answer)
-                    # self.answer_cache[domain][rrtype].append(final_ip)
                     query_result_tokens = str(query_result.answer[0]).split(" ")
-                    """
-                        We need to change the line below to grab the correct starting server
-                    """
-                    ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
                     if not cname_chase:
                         original_domain = domain
                         if original_domain not in self.answer_cache:
                             self.answer_cache[original_domain] = {}
                     domain = query_result_tokens[4]
+                    ns_list = self.get_ns_records(domain)
+                    ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
                     cname_chase = True
                 else:
                     if cname_chase:
@@ -150,6 +148,7 @@ class Resolver():
                         print final_ip
                         self.answer_cache[domain][rrtype] = query_result
                         found_ip = True
+                    print '***************************************************'
 
         return 0
 
@@ -172,21 +171,17 @@ class Resolver():
             answer_tokens = str(query_result.answer[0]).split(" ")
             return answer_tokens[5]
         elif rrtype == 'TXT':
-            print 'Answer for txt is:'
             answer_tokens = str(query_result.answer[0]).split(" ")
             split_answer_tokens = answer_tokens[5].split(":")
             return split_answer_tokens[1]
 
 
     def checkIfAnswerContainsCNAME(self, query_result):
-        print 'Checking for CNAME'
         print str(query_result.answer[0])
         if 'CNAME' in str(query_result.answer[0]):
-            print 'Contains CNAME'
             print query_result.answer[0]
             return True
         else:
-            print 'Does not contain CNAME'
             return False
 
     def print_referral_cache(self):
