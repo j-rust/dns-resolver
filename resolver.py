@@ -112,9 +112,10 @@ class Resolver():
                         We need to change the line below to grab the correct starting server
                     """
                     ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
-                    original_domain = domain
-                    if original_domain not in self.answer_cache:
-                        self.answer_cache[original_domain] = {}
+                    if not cname_chase:
+                        original_domain = domain
+                        if original_domain not in self.answer_cache:
+                            self.answer_cache[original_domain] = {}
                     domain = query_result_tokens[4]
                     cname_chase = True
                 else:
