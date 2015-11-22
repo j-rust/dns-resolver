@@ -29,8 +29,6 @@ class Resolver():
         self.referral_cache['d.root-servers.net.'] = {}
         self.referral_cache['d.root-servers.net.']['A'] = ['199.7.91.13']
 
-        self.referral_cache['a.root-servers.net.']['AAAA'] = ['2001:0503:ba3e:0000:0000:0000:0002:0030']
-
     #  q is the web address, record is the record type (A, AAAA), server is IP address of server to query
     def execute_query(self, q, record, server):
         query = dns.message.make_query(q, record, want_dnssec=True)
@@ -54,16 +52,19 @@ class Resolver():
 
     def resolve(self, domain, rrtype):
         print 'Received resolve command with args: ' + domain + ' ' + rrtype
-        # ip_address_server_list = self.referral_cache['a.root-servers.net.']['A']
-        # ip_address_of_server_to_use = ip_address_server_list[0]
         ns_list = self.get_ns_records(domain)
         ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
         found_ip = False
+        cname_info_to_append_to_answer = []
+
 
         if domain in self.answer_cache:
             if rrtype in self.answer_cache[domain]:
                 return self.answer_cache[domain][rrtype]
 
+
+        cname_chase = False
+        original_domain = ""
 
         while not found_ip:
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
@@ -90,69 +91,69 @@ class Resolver():
 
             if not query_result.answer:
                 print 'Do not have an answer'
-                if rrtype == 'A':
-                    ip_address_of_server_to_use = self.getNextServersIPForATypeRecord(query_result)
-                elif rrtype == 'AAAA':
-                    ip_address_of_server_to_use = self.getNextServersIPForAAAATypeRecord(query_result)
-                elif rrtype == 'MX':
-                    ip_address_of_server_to_use = self.getNextServersIPForMXTypeRecord(query_result)
-                elif rrtype == 'TXT':
-                    ip_address_of_server_to_use = self.getNextServersIPForTXTTypeRecord(query_result)
+                ref_domain = str(query_result.authority[0]).split(" ")[0]
+                ip_address_of_server_to_use, ref_server = self.getNextServer(query_result)
+                if ref_domain not in self.referral_cache:
+                    self.referral_cache[ref_domain] = {}
+                if 'NS' not in self.referral_cache[ref_domain]:
+                    self.referral_cache[ref_domain]['NS'] = []
+                self.referral_cache[ref_domain]['NS'].append(ref_server)
+                if ref_server not in self.referral_cache:
+                    self.referral_cache[ref_server] = {}
+                if 'A' not in self.referral_cache[ref_server]:
+                    self.referral_cache[ref_server]['A'] = []
+                self.referral_cache[ref_server]['A'].append(ip_address_of_server_to_use)
             else:
                 print 'Found answer for ' + domain + ' with rrtype ' + rrtype
-                if domain not in self.answer_cache:
-                    self.answer_cache[domain] = {}
-                if rrtype not in self.answer_cache[domain]:
-                    self.answer_cache[domain][rrtype] = []
                 if self.checkIfAnswerContainsCNAME(query_result) == True:
                     found_ip == False
                     final_ip = self.getFinalIPOfRecord(query_result, rrtype)
-                    self.answer_cache[domain][rrtype].append(final_ip)
+                    cname_info_to_append_to_answer.append(query_result.answer)
+                    # self.answer_cache[domain][rrtype].append(final_ip)
                     query_result_tokens = str(query_result.answer[0]).split(" ")
+                    """
+                        We need to change the line below to grab the correct starting server
+                    """
                     ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
+                    if not cname_chase:
+                        original_domain = domain
+                        if original_domain not in self.answer_cache:
+                            self.answer_cache[original_domain] = {}
                     domain = query_result_tokens[4]
+                    cname_chase = True
                 else:
-                    final_ip = self.getFinalIPOfRecord(query_result, rrtype)
-                    print final_ip
-                    self.answer_cache[domain][rrtype].append(final_ip)
-                    found_ip = True
+                    if cname_chase:
+                        for cname_info in cname_info_to_append_to_answer:
+                            query_result.answer.extend(cname_info)
+                        # Remove duplicates from list
+                        tmpList = []
+                        for i in query_result.answer:
+                            if i not in tmpList:
+                                tmpList.append(i)
+                        query_result.answer = tmpList
+                        self.answer_cache[original_domain][rrtype] = query_result
+                        found_ip = True
+                    else:
+                        if domain not in self.answer_cache:
+                            self.answer_cache[domain] = {}
+                        final_ip = self.getFinalIPOfRecord(query_result, rrtype)
+                        print final_ip
+                        self.answer_cache[domain][rrtype] = query_result
+                        found_ip = True
 
         return 0
 
 
-    def getNextServersIPForATypeRecord(self, query_result):
-        print 'Attempting to resolve A type domain'
-        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
-        #Take the first server and grab its IP address
+    def getNextServer(self, query_result):
         for i in range(0, 5):
             query_result_tokens = str(query_result.additional[i]).split(" ")
             if query_result_tokens[3] == 'A':
                 break
-        return query_result_tokens[4]
-
-    def getNextServersIPForAAAATypeRecord(self, query_result):
-        print 'Attempting to resolve AAAA type domain'
-        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
-        #Take the first server and grab its IP address
-        query_result_tokens = str(query_result.additional[0]).split(" ")
-        return query_result_tokens[4]
-
-    def getNextServersIPForMXTypeRecord(self, query_result):
-        print 'Attempting to resolve MX type domain'
-        query_result_tokens = str(query_result.additional[0]).split(" ")
-        return query_result_tokens[4]
-
-    def getNextServersIPForTXTTypeRecord(self, query_result):
-        print 'Attempting to resolve TXT type domain'
-        #query_result.additional looks like "m.gtld-servers.net. 172800 IN A 192.55.83.30"
-        #Take the first server and grab its IP addresss
-        query_result_tokens = str(query_result.additional[0]).split(" ")
-        return query_result_tokens[4]
+        return query_result_tokens[4], query_result_tokens[0]
 
     def getFinalIPOfRecord(self, query_result, rrtype):
         if rrtype == 'A':
             answer_tokens = str(query_result.answer[0]).split(" ")
-            #if str(query_result.answer[0]).find('CNAME'):print 'Contains cname'
             return answer_tokens[4].split()[0]
         elif rrtype == 'AAAA':
             answer_tokens = str(query_result.answer[0]).split(" ")
@@ -188,11 +189,11 @@ class Resolver():
 
     def print_answer_cache(self):
         print 'Answer Cache Contents:\n'
-
         for domain in self.answer_cache:
                 print domain + " :"
-                for key in self.answer_cache[domain]:
-                    print key + ' : ' + self.answer_cache[domain][key].__str__()
+                for rrtype in self.answer_cache[domain]:
+                    print rrtype + ' : ' + self.answer_cache[domain][rrtype].__str__()
+                    print ''
                 print ""
 
     def print_cache(self):
