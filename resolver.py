@@ -40,6 +40,8 @@ class Resolver():
         check_count = 0
         while check_count < checks:
             if domain in self.referral_cache:
+                print 'Found in refferal cache'
+                print self.referral_cache[domain]
                 break
             else:
                 index = domain.find('.') + 1
@@ -60,6 +62,8 @@ class Resolver():
 
         if domain in self.answer_cache:
             if rrtype in self.answer_cache[domain]:
+                print 'Found answer in answer cache'
+                print self.answer_cache[domain][rrtype]
                 return self.answer_cache[domain][rrtype]
 
 
@@ -73,12 +77,18 @@ class Resolver():
             if rcode != dns.rcode.NOERROR:
                 if rcode == dns.rcode.NXDOMAIN:
                     print 'NXDOMAIN Error: ' + domain + ' does not exist'
+                    self.answer_cache[domain] = {}
+                    self.answer_cache[domain][rrtype] = query_result
                     break
                 if rcode == dns.rcode.REFUSED:
                     print 'Error, domain could not be resolved: ' + domain
+                    self.answer_cache[domain] = {}
+                    self.answer_cache[domain][rrtype] = query_result
                     break
                 if rcode == dns.rcode.SERVFAIL:
                     print 'SERVFAIL Error: ' + domain
+                    self.answer_cache[domain] = {}
+                    self.answer_cache[domain][rrtype] = query_result
                     break
 
             if query_result.answer:
