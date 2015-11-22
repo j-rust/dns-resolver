@@ -55,6 +55,8 @@ class Resolver():
         ns_list = self.get_ns_records(domain)
         ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
         found_ip = False
+        cname_info_to_append_to_answer = []
+
 
         if domain in self.answer_cache:
             if rrtype in self.answer_cache[domain]:
@@ -106,6 +108,7 @@ class Resolver():
                 if self.checkIfAnswerContainsCNAME(query_result) == True:
                     found_ip == False
                     final_ip = self.getFinalIPOfRecord(query_result, rrtype)
+                    cname_info_to_append_to_answer.append(query_result.answer)
                     # self.answer_cache[domain][rrtype].append(final_ip)
                     query_result_tokens = str(query_result.answer[0]).split(" ")
                     """
@@ -120,6 +123,14 @@ class Resolver():
                     cname_chase = True
                 else:
                     if cname_chase:
+                        for cname_info in cname_info_to_append_to_answer:
+                            query_result.answer.extend(cname_info)
+                        # Remove duplicates from list
+                        tmpList = []
+                        for i in query_result.answer:
+                            if i not in tmpList:
+                                tmpList.append(i)
+                        query_result.answer = tmpList
                         self.answer_cache[original_domain][rrtype] = query_result
                         found_ip = True
                     else:
