@@ -90,9 +90,10 @@ class Resolver():
             stop_time = time.clock()
             try:
                 if (dns.flags.AA) and not query_result.answer:
-                    if domain not in self.answer_cache:
-                        self.answer_cache[domain] = {}
-                    self.answer_cache[domain][rrtype] = query_result
+                    if not cname_chase:
+                        if domain not in self.answer_cache:
+                            self.answer_cache[domain] = {}
+                        self.answer_cache[domain][rrtype] = query_result
                     print query_result
                     total_time += (stop_time - start_time)
                     print 'Total latency: ' + str(total_time * 1000) + ' milliseconds'

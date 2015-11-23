@@ -1,3 +1,6 @@
 # dns-resolver
 
-Current cache structure is: `cache[domain_name][RRType] -> values_list`
+Jonathan Rust
+Zach Osman
+
+Execute with: '$python resolver.py <command-file>'
