@@ -89,9 +89,9 @@ class Resolver():
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use, original_domain)
 
             if(dns.flags.AA) and not query_result.answer:
-                if 'www.secure64.com' not in self.answer_cache:
-                    self.answer_cache['www.secure64.com'] = {}
-                self.answer_cache['www.secure64.com']['AAAA'] = query_result
+                if domain not in self.answer_cache:
+                    self.answer_cache[domain] = {}
+                self.answer_cache[domain][rrtype] = query_result
 
 
             if not query_result: break
