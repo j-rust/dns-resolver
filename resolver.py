@@ -31,8 +31,9 @@ class Resolver():
         self.referral_cache['d.root-servers.net.']['A'] = ['199.7.91.13']
 
     #  q is the web address, record is the record type (A, AAAA), server is IP address of server to query
-    def execute_query(self, q, record, server):
-        print 'COMMAND resolve ' + q + ' ' + record
+    def execute_query(self, q, record, server, original_domain):
+        if original_domain == '': print 'COMMAND resolve ' + q + ' ' + record
+        else: print 'COMMAND resolve ' + original_domain + ' ' + record
         query = dns.message.make_query(q, record, want_dnssec=True)
 
         #return dns.query.udp(query, server, timeout=2)
@@ -85,7 +86,7 @@ class Resolver():
 
         while not found_ip:
             start_time = time.clock()
-            query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
+            query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use, original_domain)
             if not query_result: break
             print query_result
             rcode = query_result.rcode()
