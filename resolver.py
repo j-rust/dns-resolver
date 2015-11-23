@@ -85,6 +85,7 @@ class Resolver():
         original_domain = ""
 
         while not found_ip:
+            printed = False
             start_time = time.clock()
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use, original_domain)
             stop_time = time.clock()
@@ -95,6 +96,7 @@ class Resolver():
                             self.answer_cache[domain] = {}
                         self.answer_cache[domain][rrtype] = query_result
                     print query_result
+                    printed = True
                     total_time += (stop_time - start_time)
                     print 'Total latency: ' + str(total_time * 1000) + ' milliseconds'
                     print '***************************************************'
@@ -102,7 +104,7 @@ class Resolver():
                 print 'Query timed out'
 
             if not query_result: break
-            print query_result
+            if not printed: print query_result
             rcode = query_result.rcode()
             if rcode != dns.rcode.NOERROR:
                 if rcode == dns.rcode.NXDOMAIN:
@@ -305,6 +307,7 @@ class Resolver():
         elif cmd == 'print cache':
             self.print_cache()
         elif cmd == 'quit':
+            print 'COMMAND quit.  Exiting program'
             sys.exit(0)
         else:
             print "Unable to recognize command: " + cmd
