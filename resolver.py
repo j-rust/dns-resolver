@@ -6,7 +6,6 @@ import dns.rdtypes
 import dns.resolver
 import dns.rdata
 import time
-import socket
 
 from dns import rdatatype
 
@@ -56,18 +55,22 @@ class Resolver():
         found_ip = False
         cname_info_to_append_to_answer = []
 
-
+        start_time = time.clock()
         if domain in self.answer_cache:
             if rrtype in self.answer_cache[domain]:
+                stop_time = time.clock()
                 print 'Found answer in answer cache'
                 print self.answer_cache[domain][rrtype]
+                print 'Total latency: ' + str((stop_time - start_time) * 1000) + ' milliseconds'
                 return self.answer_cache[domain][rrtype]
-
+        stop_time = time.clock()
+        total_time = stop_time - start_time
 
         cname_chase = False
         original_domain = ""
 
         while not found_ip:
+            start_time = time.clock()
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
             print query_result
             rcode = query_result.rcode()
@@ -96,6 +99,8 @@ class Resolver():
                 print query_result.__str__()
                 break
 
+            stop_time = time.clock()
+            total_time += (stop_time - start_time)
             if not query_result.answer:
                 for server in query_result.additional:
                     ref_domain = str(query_result.authority[0]).split(" ")[0]
@@ -149,6 +154,20 @@ class Resolver():
                             string = string.join(tmp[4:])
                             #self.referral_cache[ref_server][type_of_record].append(str(server).split(" ")[3:])
                             self.referral_cache[ref_server][type_of_record].append(string)
+                ref_domain = str(query_result.authority[0]).split(" ")[0]
+                ip_address_of_server_to_use, ref_server = self.getNextServer(query_result)
+                if ref_domain not in self.referral_cache:
+                    self.referral_cache[ref_domain] = {}
+                if 'NS' not in self.referral_cache[ref_domain]:
+                    self.referral_cache[ref_domain]['NS'] = []
+                self.referral_cache[ref_domain]['NS'].append(ref_server)
+                if ref_server not in self.referral_cache:
+                    self.referral_cache[ref_server] = {}
+                if 'A' not in self.referral_cache[ref_server]:
+                    self.referral_cache[ref_server]['A'] = []
+                self.referral_cache[ref_server]['A'].append(ip_address_of_server_to_use)
+                print 'Latency for this iteration: ' +  str((stop_time - start_time) * 1000) \
+                      + ' milliseconds'
                 print '_____________________________________________________'
             else:
                 print 'Found answer for ' + domain + ' with rrtype ' + rrtype
@@ -188,6 +207,7 @@ class Resolver():
                         print final_ip
                         self.answer_cache[domain][rrtype] = query_result
                         found_ip = True
+                    print 'Total latency: ' + str(total_time * 1000) + ' milliseconds'
                     print '***************************************************'
 
         return 0
@@ -263,6 +283,20 @@ class Resolver():
         file = open(filename)
         for line in file:
             self.process_command(line.strip())
+
+    """
+        The following are stopwatch type methods to keep track of time
+    """
+    def start(self):
+        self.start_time = time.now()
+        return self.start
+
+    def stop(self):
+        self.stop_time = time.now()
+        self.elapsed = (self.stop_time - self.start_time) / 1000
+
+    def reset(self):
+        self.elapsed = 0.0
 
 
 
