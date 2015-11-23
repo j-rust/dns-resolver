@@ -88,16 +88,17 @@ class Resolver():
             start_time = time.clock()
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use, original_domain)
             stop_time = time.clock()
-            if(dns.flags.AA) and not query_result.answer:
-                if domain not in self.answer_cache:
-                    self.answer_cache[domain] = {}
-                self.answer_cache[domain][rrtype] = query_result
-                print query_result
-                total_time += (stop_time - start_time)
-                print 'Total latency: ' + str(total_time * 1000) + ' milliseconds'
-                print '***************************************************'
-                break
-
+            try:
+                if (dns.flags.AA) and not query_result.answer:
+                    if domain not in self.answer_cache:
+                        self.answer_cache[domain] = {}
+                    self.answer_cache[domain][rrtype] = query_result
+                    print query_result
+                    total_time += (stop_time - start_time)
+                    print 'Total latency: ' + str(total_time * 1000) + ' milliseconds'
+                    print '***************************************************'
+            except AttributeError:
+                print 'Query timed out'
 
             if not query_result: break
             print query_result
