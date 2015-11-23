@@ -63,6 +63,9 @@ class Resolver():
     def resolve(self, domain, rrtype):
         ns_list = self.get_ns_records(domain)
         ip_address_of_server_to_use = self.referral_cache[ns_list[0]]['A'][0]
+        print '*** NS records fetched from cache: ' + ns_list.__str__()
+        print '*** Name server ' + ns_list[0].__str__() + ' has IP address ' + \
+              self.referral_cache[ns_list[0]]['A'].__str__()
         found_ip = False
         cname_info_to_append_to_answer = []
 
