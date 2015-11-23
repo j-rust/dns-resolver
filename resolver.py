@@ -103,17 +103,18 @@ class Resolver():
                     ref_server = str(server).split(" ")[0]
                     ip_address_of_server_to_use = str(server).split(" ")[4]
                     type_of_record_to_add = str(server).split(" ")[3]
-                    #print ip_address_of_server_to_use
-                    if ref_domain not in self.referral_cache:
-                        self.referral_cache[ref_domain] = {}
-                    if 'NS' not in self.referral_cache[ref_domain]:
-                        self.referral_cache[ref_domain]['NS'] = []
-                    if ref_server not in self.referral_cache[ref_domain]['NS']: self.referral_cache[ref_domain]['NS'].append(ref_server)
-                    if ref_server not in self.referral_cache:
-                        self.referral_cache[ref_server] = {}
-                    if type_of_record_to_add not in self.referral_cache[ref_server]:
-                        self.referral_cache[ref_server][type_of_record_to_add] = []
-                    if ip_address_of_server_to_use not in self.referral_cache[ref_server][type_of_record_to_add]: self.referral_cache[ref_server][type_of_record_to_add].append(ip_address_of_server_to_use)
+                    if type_of_record_to_add != 'AAAA':
+                        #print ip_address_of_server_to_use
+                        if ref_domain not in self.referral_cache:
+                            self.referral_cache[ref_domain] = {}
+                        if 'NS' not in self.referral_cache[ref_domain]:
+                            self.referral_cache[ref_domain]['NS'] = []
+                        if ref_server not in self.referral_cache[ref_domain]['NS']: self.referral_cache[ref_domain]['NS'].append(ref_server)
+                        if ref_server not in self.referral_cache:
+                            self.referral_cache[ref_server] = {}
+                        if type_of_record_to_add not in self.referral_cache[ref_server]:
+                            self.referral_cache[ref_server][type_of_record_to_add] = []
+                        if ip_address_of_server_to_use not in self.referral_cache[ref_server][type_of_record_to_add]: self.referral_cache[ref_server][type_of_record_to_add].append(ip_address_of_server_to_use)
                 #Add NSEC3, DS, and RRSIG records
                 for server in query_result.authority:
                     ref_domain = str(query_result.authority[0]).split(" ")[0]
