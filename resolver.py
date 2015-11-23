@@ -87,6 +87,13 @@ class Resolver():
         while not found_ip:
             start_time = time.clock()
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use, original_domain)
+
+            if(dns.flags.AA) and not query_result.answer:
+                if 'www.secure64.com' not in self.answer_cache:
+                    self.answer_cache['www.secure64.com'] = {}
+                self.answer_cache['www.secure64.com']['AAAA'] = query_result
+
+
             if not query_result: break
             print query_result
             rcode = query_result.rcode()
