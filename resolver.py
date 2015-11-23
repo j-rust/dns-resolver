@@ -176,12 +176,14 @@ class Resolver():
                     self.referral_cache[ref_domain] = {}
                 if 'NS' not in self.referral_cache[ref_domain]:
                     self.referral_cache[ref_domain]['NS'] = []
-                self.referral_cache[ref_domain]['NS'].append(ref_server)
+                if ref_server not in self.referral_cache[ref_domain]['NS']:
+                    self.referral_cache[ref_domain]['NS'].append(ref_server)
                 if ref_server not in self.referral_cache:
                     self.referral_cache[ref_server] = {}
                 if 'A' not in self.referral_cache[ref_server]:
                     self.referral_cache[ref_server]['A'] = []
-                self.referral_cache[ref_server]['A'].append(ip_address_of_server_to_use)
+                if ip_address_of_server_to_use not in self.referral_cache[ref_server]['A']:
+                    self.referral_cache[ref_server]['A'].append(ip_address_of_server_to_use)
                 print 'Latency for this iteration: ' +  str((stop_time - start_time) * 1000) \
                       + ' milliseconds'
                 print '_____________________________________________________'
