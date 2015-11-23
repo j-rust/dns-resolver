@@ -5,6 +5,8 @@ import dns.name
 import dns.rdtypes
 import dns.resolver
 import dns.rdata
+import dns.exception
+from dns.exception import DNSException
 import time
 
 from dns import rdatatype
@@ -30,8 +32,17 @@ class Resolver():
 
     #  q is the web address, record is the record type (A, AAAA), server is IP address of server to query
     def execute_query(self, q, record, server):
+        print 'COMMAND resolve ' + q + ' ' + record
         query = dns.message.make_query(q, record, want_dnssec=True)
-        return dns.query.udp(query, server)
+
+        #return dns.query.udp(query, server, timeout=2)
+        for i in range (0, 3):
+            try:
+                return dns.query.udp(query, server, timeout=2)
+            except dns.exception.Timeout:
+                print 'Attempting to resolve ' + q + ' for the ' + str(i + 1) + ' time'
+        print 'could not resolve ' + q + ' due to timeout error'
+
 
     def get_ns_records(self, domain):
         domain += '.'
@@ -72,6 +83,7 @@ class Resolver():
         while not found_ip:
             start_time = time.clock()
             query_result = self.execute_query(domain, rrtype, ip_address_of_server_to_use)
+            if not query_result: break
             print query_result
             rcode = query_result.rcode()
             if rcode != dns.rcode.NOERROR:
