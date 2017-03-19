@@ -3,4 +3,4 @@
 Jonathan Rust
 Zach Osman
 
-Execute with: '$python resolver.py <command-file>'
+Execute with: `$python resolver.py <command-file>`
